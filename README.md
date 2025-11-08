@@ -60,14 +60,14 @@
 ### 로컬에서 실행
 1. 저장소 클론
 ```bash
-git clone https://github.com/Siss1994/BithumbAPI.git
-cd BithumbAPI
+git clone https://github.com/Siss1994/blockers-game.git
+cd blockers-game
 ```
 
 2. 웹 브라우저로 `index.html` 파일 열기
 
 ### GitHub Pages로 접속
-https://siss1994.github.io/BithumbAPI/
+https://siss1994.github.io/blockers-game/
 
 ## 📁 프로젝트 구조
 
