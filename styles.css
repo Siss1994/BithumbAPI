@@ -9,6 +9,9 @@ body {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     padding: 20px;
+    /* 모바일 터치 최적화 */
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
 }
 
 #app {
@@ -76,11 +79,14 @@ header h1 {
     border-radius: 15px;
     padding: 30px;
     width: 200px;
+    min-height: 180px;
     cursor: pointer;
     transition: all 0.3s;
+    touch-action: manipulation;
 }
 
-.mode-btn:hover {
+.mode-btn:hover,
+.mode-btn:active {
     transform: translateY(-5px);
     box-shadow: 0 8px 16px rgba(102, 126, 234, 0.3);
     background: #667eea;
@@ -143,9 +149,15 @@ header h1 {
     cursor: pointer;
     transition: all 0.2s;
     background: white;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
 }
 
-.piece-item:hover {
+.piece-item:hover,
+.piece-item:active {
     border-color: #667eea;
     transform: scale(1.05);
 }
@@ -179,6 +191,11 @@ header h1 {
     border-radius: 5px;
     cursor: crosshair;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-width: 100%;
+    height: auto;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #board-controls {
@@ -187,7 +204,9 @@ header h1 {
 }
 
 #board-controls button {
-    padding: 10px 20px;
+    padding: 12px 20px;
+    min-height: 44px;
+    min-width: 44px;
     background: #667eea;
     color: white;
     border: none;
@@ -195,9 +214,11 @@ header h1 {
     cursor: pointer;
     font-size: 14px;
     transition: background 0.3s;
+    touch-action: manipulation;
 }
 
-#board-controls button:hover {
+#board-controls button:hover,
+#board-controls button:active {
     background: #5568d3;
 }
 
@@ -304,17 +325,203 @@ header h1 {
 }
 
 @media (max-width: 768px) {
-    #pieces-container {
-        grid-template-columns: repeat(3, 1fr);
+    body {
+        padding: 10px;
     }
 
-    .mode-buttons {
+    header {
+        padding: 15px;
+    }
+
+    header h1 {
+        font-size: 24px;
+    }
+
+    #game-info {
         flex-direction: column;
-        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+    }
+
+    #main-container {
+        padding: 15px;
+        min-height: auto;
+    }
+
+    #mode-selection h2 {
+        font-size: 24px;
+        margin-bottom: 20px;
+    }
+
+    .mode-btn {
+        width: 100%;
+        max-width: 280px;
+        padding: 25px;
+        min-height: 150px;
+    }
+
+    .mode-icon {
+        font-size: 40px;
+    }
+
+    .mode-title {
+        font-size: 20px;
+    }
+
+    #pieces-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .piece-item {
+        min-height: 70px;
+        padding: 5px;
+    }
+
+    #board-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    #board-controls button {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 100px;
+        padding: 14px 16px;
+        font-size: 13px;
+    }
+
+    #pieces-panel, #info-panel {
+        padding: 12px;
+    }
+
+    #pieces-panel h3,
+    #info-panel h3,
+    #game-status h3 {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .player-info {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .player-pieces {
+        font-size: 11px;
     }
 
     #game-board {
         width: 100%;
         height: auto;
+        cursor: default;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    header {
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    header h1 {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    #main-container {
+        padding: 10px;
+    }
+
+    #mode-selection h2 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+
+    .mode-btn {
+        padding: 20px;
+        min-height: 140px;
+    }
+
+    .mode-icon {
+        font-size: 36px;
+        margin-bottom: 10px;
+    }
+
+    .mode-title {
+        font-size: 18px;
+    }
+
+    .mode-desc {
+        font-size: 13px;
+    }
+
+    #pieces-container {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .piece-item {
+        min-height: 60px;
+        padding: 4px;
+    }
+
+    #board-controls {
+        gap: 6px;
+    }
+
+    #board-controls button {
+        flex: 1 1 100%;
+        font-size: 14px;
+        padding: 12px;
+    }
+
+    #game-info {
+        font-size: 12px;
+    }
+
+    #status-text {
+        font-size: 13px;
+    }
+}
+
+/* 가로 모드 최적화 */
+@media (max-height: 600px) and (orientation: landscape) {
+    body {
+        padding: 5px;
+    }
+
+    header {
+        padding: 10px;
+        margin-bottom: 8px;
+    }
+
+    #main-container {
+        padding: 10px;
+    }
+
+    #game-layout {
+        grid-template-columns: 200px 1fr 200px;
+        gap: 10px;
+    }
+
+    #pieces-panel,
+    #info-panel {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    #board-controls {
+        gap: 6px;
+    }
+
+    #board-controls button {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-height: 36px;
     }
 }

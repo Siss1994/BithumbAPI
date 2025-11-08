@@ -4,7 +4,7 @@ class BlokusGame {
     constructor(mode = '1v1v1v1') {
         this.mode = mode;
         this.boardSize = 20;
-        this.cellSize = 30;
+        this.cellSize = 30; // 기본값, updateCanvasSize()로 동적 조정
         this.board = this.createBoard();
         this.players = this.createPlayers(mode);
         this.currentPlayerIndex = 0;
@@ -19,6 +19,42 @@ class BlokusGame {
             3: [19, 0],          // 오른쪽 상단
             4: [0, 19]           // 왼쪽 하단
         };
+    }
+
+    // 캔버스 크기를 뷰포트에 맞게 동적으로 조정
+    updateCanvasSize(canvas) {
+        const container = canvas.parentElement;
+        if (!container) return;
+
+        // 컨테이너의 실제 너비 가져오기
+        const containerWidth = container.clientWidth;
+        const containerHeight = window.innerHeight - 250; // 헤더, 컨트롤 버튼 등 고려
+
+        // 뷰포트 크기에 따라 cellSize 동적 계산
+        // 모바일: 최대 너비/높이의 90% 사용
+        // 데스크탑: 최대 600px
+        const maxSize = Math.min(containerWidth, containerHeight, 600);
+        const calculatedCellSize = Math.floor(maxSize / this.boardSize);
+
+        // cellSize는 최소 15px, 최대 30px
+        this.cellSize = Math.max(15, Math.min(calculatedCellSize, 30));
+
+        // 캔버스 크기 설정
+        const canvasSize = this.cellSize * this.boardSize;
+        canvas.width = canvasSize;
+        canvas.height = canvasSize;
+
+        // 고해상도 디스플레이 대응
+        const dpr = window.devicePixelRatio || 1;
+        if (dpr > 1) {
+            canvas.style.width = canvasSize + 'px';
+            canvas.style.height = canvasSize + 'px';
+            canvas.width = canvasSize * dpr;
+            canvas.height = canvasSize * dpr;
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+        }
     }
 
     // 보드 생성

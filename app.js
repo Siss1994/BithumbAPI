@@ -21,6 +21,9 @@ class BlokusApp {
 
         // 모드 선택 화면 표시
         this.showModeSelection();
+
+        // 디바이스 감지
+        this.isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     }
 
     setupEventListeners() {
@@ -32,13 +35,19 @@ class BlokusApp {
             });
         });
 
-        // 캔버스 이벤트
+        // 캔버스 이벤트 (마우스)
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
         this.canvas.addEventListener('mouseleave', () => {
             this.mousePos = { x: -1, y: -1 };
             this.render();
         });
+
+        // 캔버스 이벤트 (터치)
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        this.canvas.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
 
         // 조작 버튼
         document.getElementById('rotate-btn').addEventListener('click', () => this.rotatePiece());
@@ -70,6 +79,12 @@ class BlokusApp {
                     break;
             }
         });
+
+        // 윈도우 리사이즈 이벤트
+        window.addEventListener('resize', () => this.handleResize());
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => this.handleResize(), 100);
+        });
     }
 
     showModeSelection() {
@@ -80,6 +95,9 @@ class BlokusApp {
     startGame(mode) {
         // 게임 생성
         this.game = new BlokusGame(mode);
+
+        // 캔버스 크기 조정
+        this.game.updateCanvasSize(this.canvas);
 
         // 화면 전환
         document.getElementById('mode-selection').classList.add('hidden');
@@ -184,6 +202,89 @@ class BlokusApp {
             }
         }
 
+        this.render();
+    }
+
+    // 터치 이벤트 핸들러
+    getTouchPosition(e) {
+        if (!e.touches || e.touches.length === 0) return null;
+
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        return {
+            x: Math.floor((touch.clientX - rect.left) * scaleX / this.game.cellSize),
+            y: Math.floor((touch.clientY - rect.top) * scaleY / this.game.cellSize)
+        };
+    }
+
+    handleTouchStart(e) {
+        e.preventDefault();
+
+        const pos = this.getTouchPosition(e);
+        if (pos) {
+            this.mousePos = pos;
+            this.touchStartPos = pos;
+            this.render();
+        }
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+
+        const pos = this.getTouchPosition(e);
+        if (pos) {
+            this.mousePos = pos;
+            this.render();
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+
+        if (!this.game || !this.game.selectedPiece || this.game.gameOver) {
+            this.mousePos = { x: -1, y: -1 };
+            this.render();
+            return;
+        }
+
+        // 터치 시작 위치와 동일한 경우에만 배치 시도
+        if (this.touchStartPos && this.mousePos.x === this.touchStartPos.x &&
+            this.mousePos.y === this.touchStartPos.y) {
+
+            const x = this.mousePos.x;
+            const y = this.mousePos.y;
+
+            // 조각 배치 시도
+            if (this.game.placePiece(this.game.selectedPiece, x, y)) {
+                this.game.selectedPiece = null;
+                if (this.selectedPieceElement) {
+                    this.selectedPieceElement.classList.remove('selected');
+                    this.selectedPieceElement = null;
+                }
+
+                this.renderPieces();
+                this.updatePlayersInfo();
+                this.updateStatus();
+
+                if (this.game.isGameOver()) {
+                    this.showGameOver();
+                }
+            }
+        }
+
+        this.mousePos = { x: -1, y: -1 };
+        this.touchStartPos = null;
+        this.render();
+    }
+
+    // 리사이즈 핸들러
+    handleResize() {
+        if (!this.game) return;
+
+        this.game.updateCanvasSize(this.canvas);
         this.render();
     }
 
