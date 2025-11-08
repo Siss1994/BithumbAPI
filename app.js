@@ -8,6 +8,11 @@ class BlokusApp {
         this.selectedPieceElement = null;
         this.mousePos = { x: -1, y: -1 };
 
+        // 터치/드래그 관련 변수
+        this.isDragging = false;
+        this.dragStartPos = null;
+        this.isMobile = 'ontouchstart' in window;
+
         this.init();
     }
 
@@ -32,13 +37,18 @@ class BlokusApp {
             });
         });
 
-        // 캔버스 이벤트
+        // 캔버스 이벤트 (마우스)
         this.canvas.addEventListener('mousemove', (e) => this.handleMouseMove(e));
         this.canvas.addEventListener('click', (e) => this.handleClick(e));
         this.canvas.addEventListener('mouseleave', () => {
             this.mousePos = { x: -1, y: -1 };
             this.render();
         });
+
+        // 캔버스 터치 이벤트
+        this.canvas.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
+        this.canvas.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
+        this.canvas.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
 
         // 조작 버튼
         document.getElementById('rotate-btn').addEventListener('click', () => this.rotatePiece());
@@ -85,10 +95,34 @@ class BlokusApp {
         document.getElementById('mode-selection').classList.add('hidden');
         document.getElementById('game-screen').classList.remove('hidden');
 
+        // 캔버스 크기 조정 (모바일 대응)
+        this.resizeCanvas();
+
         // UI 업데이트
         this.updateModeDisplay(mode);
         this.renderPieces();
         this.updatePlayersInfo();
+        this.render();
+
+        // 리사이즈 이벤트 리스너
+        window.addEventListener('resize', () => this.resizeCanvas());
+    }
+
+    resizeCanvas() {
+        if (!this.game) return;
+
+        const container = document.getElementById('board-container');
+        const maxWidth = container.clientWidth - 20;
+        const maxSize = Math.min(maxWidth, 600);
+
+        // 캔버스 크기 설정
+        this.canvas.width = maxSize;
+        this.canvas.height = maxSize;
+
+        // 셀 크기 재계산
+        this.game.cellSize = maxSize / this.game.boardSize;
+
+        // 다시 그리기
         this.render();
     }
 
@@ -125,10 +159,29 @@ class BlokusApp {
             // 미리보기 그리기
             piece.drawPreview(canvas);
 
-            // 클릭 이벤트
+            // 클릭/탭 이벤트
             if (!piece.used) {
                 pieceDiv.addEventListener('click', () => {
                     this.selectPiece(index, pieceDiv);
+                });
+
+                // 더블탭으로 회전 (모바일)
+                let lastTap = 0;
+                pieceDiv.addEventListener('touchend', (e) => {
+                    const currentTime = new Date().getTime();
+                    const tapLength = currentTime - lastTap;
+
+                    if (tapLength < 300 && tapLength > 0) {
+                        // 더블탭 감지
+                        e.preventDefault();
+                        this.selectPiece(index, pieceDiv);
+                        this.rotatePiece();
+                    } else {
+                        // 싱글탭
+                        this.selectPiece(index, pieceDiv);
+                    }
+
+                    lastTap = currentTime;
                 });
             }
         });
@@ -329,6 +382,77 @@ class BlokusApp {
         if (!this.game.gameOver) {
             this.updateStatus();
         }
+    }
+
+    // 터치 이벤트 핸들러
+    handleTouchStart(e) {
+        e.preventDefault();
+        if (!this.game || !this.game.selectedPiece || this.game.gameOver) return;
+
+        const touch = e.touches[0];
+        this.dragStartPos = { x: touch.clientX, y: touch.clientY };
+        this.updateTouchPosition(touch);
+    }
+
+    handleTouchMove(e) {
+        e.preventDefault();
+        if (!this.game || !this.game.selectedPiece || this.game.gameOver) return;
+
+        const touch = e.touches[0];
+        this.updateTouchPosition(touch);
+
+        // 스와이프 제스처 감지 (회전)
+        if (this.dragStartPos) {
+            const dx = touch.clientX - this.dragStartPos.x;
+            const dy = touch.clientY - this.dragStartPos.y;
+
+            // 가로 스와이프 - 회전
+            if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 2) {
+                this.rotatePiece();
+                this.dragStartPos = { x: touch.clientX, y: touch.clientY };
+            }
+        }
+    }
+
+    handleTouchEnd(e) {
+        e.preventDefault();
+        if (!this.game || !this.game.selectedPiece || this.game.gameOver) return;
+
+        // 터치 종료 시 조각 배치 시도
+        if (this.mousePos.x >= 0 && this.mousePos.y >= 0) {
+            if (this.game.placePiece(this.game.selectedPiece, this.mousePos.x, this.mousePos.y)) {
+                // 성공
+                this.game.selectedPiece = null;
+                if (this.selectedPieceElement) {
+                    this.selectedPieceElement.classList.remove('selected');
+                    this.selectedPieceElement = null;
+                }
+
+                this.renderPieces();
+                this.updatePlayersInfo();
+                this.updateStatus();
+
+                // 게임 종료 확인
+                if (this.game.isGameOver()) {
+                    this.showGameOver();
+                }
+            }
+        }
+
+        this.dragStartPos = null;
+        this.render();
+    }
+
+    updateTouchPosition(touch) {
+        const rect = this.canvas.getBoundingClientRect();
+        const scaleX = this.canvas.width / rect.width;
+        const scaleY = this.canvas.height / rect.height;
+
+        const x = Math.floor(((touch.clientX - rect.left) * scaleX) / this.game.cellSize);
+        const y = Math.floor(((touch.clientY - rect.top) * scaleY) / this.game.cellSize);
+
+        this.mousePos = { x, y };
+        this.render();
     }
 }
 
